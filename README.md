@@ -1,6 +1,6 @@
 # TimeTracker - Frontend (Control de Jornada Laboral)
 
-Esta aplicación web sirve para la marcación de inicio, finalizacion y cronometro en tiempo real de jornadas laborales. creado con la versión 21 de [Angular CLI](https://github.com/angular/angular-cli), en el cual el usuario marcar entrada y salida de 1 o varios turnos de trabajo al mismo tiempo. manteniendo el cronometro sin importar si se recarga o se cierra el aplicativo web.
+Esta aplicación web sirve para la marcación de inicio, finalizacion y cronometro en tiempo real de jornadas laborales. creado con la versión 21 de [Angular CLI](https://github.com/angular/angular-cli), en el cual el usuario puede marcar la entrada y salida de 1 o varios turnos de trabajo al mismo tiempo. manteniendo el cronometro sin importar si se recarga o se cierra el aplicativo web.
 
 Aplicacion web cliente desarrollada con **Angular 21**, **Angular Signals** y **Tailwind CSS** para la marcacion de inicio, finalizacion y cronometro en tiempo real de jornadas laborales.
 
@@ -14,7 +14,7 @@ Aplicacion web cliente desarrollada con **Angular 21**, **Angular Signals** y **
   * `src/app/core/services/`: Capa de comunicacion HTTP con inyeccion moderna (`inject()`).
   * `src/app/app.routes.ts`: Enrutamiento granular desacoplado del componente raiz.
 * **Angular 21 Standalone:** Eliminacion completa de modulos heredados (`NgModules`). Componentes autosuficientes con carga eficiente.
-* **Reactividad Quirurgica con Signals:** Manejo de estado centralizado con `signal()` y propiedades derivadas computadas con `computed()`. Actualizaciones precisas del DOM sin sobrecosto de detección de cambios ni fugas de memoria.
+* **Reactividad con Signals:** Manejo de estado centralizado con `signal()` y propiedades derivadas computadas con `computed()`. Actualizaciones precisas del DOM sin sobrecosto de detección de cambios ni fugas de memoria.
 * **Cronometro Sincronizado contra Servidor (Resiliente a Recargas):**  
   El cronometro **no es un contador local aislado**. Se inicializa a partir de la fecha de entrada oficial provista por el backend (`started_at`). En cada segundo, calcula la diferencia en tiempo real contra el reloj del servidor. Si el usuario recarga la pagina, cambia de pestana o cambia de trabajador, el cronometro refleja de inmediato el tiempo real exacto.
 * **Diseno con Tailwind CSS:**  
