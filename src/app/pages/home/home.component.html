@@ -1,0 +1,256 @@
+<div class="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
+  
+  <!-- Barra de navegacion superior empresarial -->
+  <header class="border-b border-zinc-800/80 bg-zinc-900/60 backdrop-blur sticky top-0 z-20">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center font-bold text-white text-sm shadow-sm">
+          TT
+        </div>
+        <div>
+          <span class="text-sm font-semibold tracking-tight text-zinc-100">Control de Tiempos</span>
+          <span class="text-xs text-zinc-400 block -mt-0.5">Control de Asistencia Laboral</span>
+        </div>
+      </div>
+
+      <div class="text-right">
+        <p class="text-xs text-zinc-400 capitalize">{{ currentDateFormatted() }}</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenido principal -->
+  <main class="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+    <!-- Mensajes de feedback discretos -->
+    @if (errorMessage()) {
+      <div class="bg-rose-950/40 border border-rose-800/60 text-rose-200 px-4 py-3 rounded-lg text-sm flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-rose-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>{{ errorMessage() }}</span>
+        </div>
+        <button (click)="errorMessage.set(null)" class="text-rose-400 hover:text-rose-200 text-xs px-2 py-1">Cerrar</button>
+      </div>
+    }
+
+    @if (successMessage()) {
+      <div class="bg-emerald-950/40 border border-emerald-800/60 text-emerald-200 px-4 py-3 rounded-lg text-sm flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          <span>{{ successMessage() }}</span>
+        </div>
+        <button (click)="successMessage.set(null)" class="text-emerald-400 hover:text-emerald-200 text-xs px-2 py-1">Cerrar</button>
+      </div>
+    }
+
+    <!-- Layout en 2 columnas estilo Dashboard SaaS -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+      <!-- Columna Izquierda: Panel de Marcaje y Seleccion de Empleado (5 columnas) -->
+      <section class="lg:col-span-5 bg-zinc-900/80 border border-zinc-800 rounded-xl p-6 shadow-sm space-y-6">
+        
+        <div>
+          <h2 class="text-sm font-semibold text-zinc-100">Registro de Jornada</h2>
+          <p class="text-xs text-zinc-400 mt-0.5">Seleccione el colaborador y registre su entrada o salida.</p>
+        </div>
+
+        <!-- Selector / Input con busqueda en tiempo real (sin boton de consultar) -->
+        <div class="relative">
+          <label class="block text-xs font-medium text-zinc-400 mb-1.5">Colaborador o Codigo</label>
+          <div class="relative flex items-center">
+            <span class="absolute left-3 text-zinc-500">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </span>
+            <input
+              type="text"
+              [(ngModel)]="workerCode"
+              name="workerCode"
+              (focus)="dropdownOpen.set(true)"
+              (keydown.enter)="consultWorker(); closeDropdown()"
+              placeholder="Buscar por nombre o codigo (Enter para buscar)"
+              class="w-full bg-zinc-950 border border-zinc-700/80 rounded-lg pl-9 pr-9 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 uppercase font-mono transition"
+              [disabled]="loading() || actionLoading()"
+              autocomplete="off"
+            />
+            <button
+              type="button"
+              (click)="toggleDropdown()"
+              class="absolute right-2 text-zinc-400 hover:text-zinc-200 p-1"
+              title="Desplegar colaboradores"
+            >
+              <svg class="w-4 h-4 transform transition-transform" [ngClass]="{'rotate-180': dropdownOpen()}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Dropdown Flotante -->
+          @if (dropdownOpen()) {
+            <div class="absolute left-0 right-0 mt-1.5 bg-zinc-900 border border-zinc-700/80 rounded-lg shadow-xl z-30 max-h-56 overflow-y-auto divide-y divide-zinc-800">
+              <div class="px-3 py-2 text-[11px] font-medium text-zinc-400 flex justify-between items-center bg-zinc-950/50">
+                <span>Colaboradores registrados</span>
+                <button type="button" (click)="closeDropdown()" class="text-zinc-400 hover:text-zinc-200 text-xs">Cerrar</button>
+              </div>
+              @for (worker of filteredWorkers(); track worker.id) {
+                <button
+                  type="button"
+                  (click)="selectWorker(worker)"
+                  class="w-full text-left px-3.5 py-2.5 hover:bg-zinc-800/80 transition flex items-center justify-between group"
+                >
+                  <div>
+                    <p class="text-sm font-medium text-zinc-200 group-hover:text-emerald-400 transition-colors">{{ worker.name }}</p>
+                    <p class="text-xs text-zinc-500 font-mono">{{ worker.code }}</p>
+                  </div>
+                  <span
+                    class="text-[10px] font-medium px-2 py-0.5 rounded"
+                    [ngClass]="worker.is_active !== false ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/60' : 'bg-zinc-800 text-zinc-400'"
+                  >
+                    {{ worker.is_active !== false ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </button>
+              } @empty {
+                <div class="px-3 py-4 text-center text-xs text-zinc-500">
+                  No se encontraron resultados. Presione Enter para consultar.
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Ficha del colaborador seleccionado -->
+        @if (currentWorker()) {
+          <div class="bg-zinc-950/60 border border-zinc-800 rounded-lg p-3.5 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-emerald-950 border border-emerald-800 text-emerald-300 flex items-center justify-center font-semibold text-sm">
+              {{ currentWorker()?.name?.slice(0, 2)?.toUpperCase() }}
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-medium text-zinc-100 truncate">{{ currentWorker()?.name }}</p>
+              <p class="text-xs text-zinc-400 font-mono">{{ currentWorker()?.code }} &bull; {{ currentWorker()?.email ?? 'Sin correo' }}</p>
+            </div>
+          </div>
+        }
+
+        <!-- Modulo de Cronometro (Diseno sobrio, tipografia tabular natural) -->
+        <div class="border-t border-zinc-800/80 pt-6 text-center space-y-2">
+          <p class="text-xs text-zinc-400 uppercase tracking-wider font-medium">Tiempo de trabajo hoy</p>
+          <div class="py-2">
+            <span class="text-5xl font-mono font-medium tracking-tight text-zinc-100 tabular-nums">
+              {{ timerDisplay() }}
+            </span>
+          </div>
+
+          @if (hasActiveShift() && activeShift()) {
+            <p class="text-xs text-emerald-400 font-mono">
+              Entrada registrada: {{ activeShift()?.started_at_formatted }}
+            </p>
+          } @else {
+            <p class="text-xs text-zinc-500 font-mono">
+              Sin turno en curso
+            </p>
+          }
+        </div>
+
+        <!-- Botones de Marcaje Contextuales -->
+        <div class="pt-2">
+          @if (!hasActiveShift()) {
+            <button
+              type="button"
+              (click)="startShift()"
+              [disabled]="!canStart()"
+              class="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition text-sm shadow-sm flex items-center justify-center gap-2"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>{{ actionLoading() ? 'Iniciando...' : 'Iniciar jornada' }}</span>
+            </button>
+          } @else {
+            <button
+              type="button"
+              (click)="endShift()"
+              [disabled]="!canEnd()"
+              class="w-full bg-rose-700 hover:bg-rose-600 disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition text-sm shadow-sm flex items-center justify-center gap-2"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+              </svg>
+              <span>{{ actionLoading() ? 'Finalizando...' : 'Terminar jornada' }}</span>
+            </button>
+          }
+        </div>
+
+      </section>
+
+      <!-- Columna Derecha: Historial y Registro de Actividad (7 columnas) -->
+      <section class="lg:col-span-7 bg-zinc-900/80 border border-zinc-800 rounded-xl p-6 shadow-sm space-y-4">
+        
+        <div class="flex items-center justify-between pb-3 border-b border-zinc-800">
+          <div>
+            <h2 class="text-sm font-semibold text-zinc-100">Registro de Jornadas</h2>
+            <p class="text-xs text-zinc-400">Historial reciente del colaborador</p>
+          </div>
+          <span class="text-xs text-zinc-500 font-mono">{{ history().length }} turnos registrados</span>
+        </div>
+
+        @if (history().length === 0) {
+          <div class="text-center py-12 text-zinc-500 text-sm">
+            <svg class="w-8 h-8 mx-auto text-zinc-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            No hay registros de jornada finalizados para este trabajador.
+          </div>
+        } @else {
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-zinc-300">
+              <thead class="text-[11px] font-medium uppercase tracking-wider text-zinc-400 border-b border-zinc-800">
+                <tr>
+                  <th class="py-2.5 px-3">Fecha</th>
+                  <th class="py-2.5 px-3">Entrada</th>
+                  <th class="py-2.5 px-3">Salida</th>
+                  <th class="py-2.5 px-3 text-right">Duración</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-zinc-800/60">
+                @for (shift of history(); track shift.id) {
+                  <tr class="hover:bg-zinc-800/40 transition-colors">
+                    <td class="py-3 px-3 text-xs text-zinc-400 font-mono">
+                      {{ shift.started_at_formatted?.split(' ')?.[0] ?? 'N/A' }}
+                    </td>
+                    <td class="py-3 px-3 text-xs text-zinc-200 font-mono">
+                      {{ shift.started_at_formatted?.split(' ')?.[1] ?? 'N/A' }}
+                    </td>
+                    <td class="py-3 px-3 text-xs text-zinc-200 font-mono">
+                      {{ shift.ended_at_formatted?.split(' ')?.[1] ?? 'N/A' }}
+                    </td>
+                    <td class="py-3 px-3 text-right">
+                      <span class="inline-block bg-zinc-800 text-emerald-400 font-mono text-xs font-medium px-2 py-0.5 rounded">
+                        {{ shift.duration_formatted ?? (shift.total_worked_seconds + 's') }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- Footer discreto -->
+  <footer class="border-t border-zinc-800/60 py-4 px-6 text-center text-xs text-zinc-500">
+    TimeTracker &bull; Control Horario y Asistencia
+  </footer>
+
+</div>
